@@ -1,15 +1,16 @@
-import { serve } from "https://deno.land/std@0.114.0/http/server.ts";
 import "https://deno.land/std@0.138.0/dotenv/load.ts";
-import { Client } from "https://deno.land/x/postgres@v0.15.0/mod.ts";
+import { Application } from "https://deno.land/x/oak@v10.5.1/mod.ts";
+import { setupServer } from "./server.ts";
+import { setupClient } from "./client.ts";
 
-const databaseUrl = Deno.env.get("DATABASE_URL")!;
+const app = new Application();
 
-const client = new Client(databaseUrl);
-await client.connect();
+const serverRoutes = await setupServer();
+const clinetRoutes = setupClient();
 
-console.log("Listening on http://localhost:8000");
-serve((_req) => {
-  return new Response(Deno.env.get("GREETING"), {
-    headers: { "content-type": "text/plain" },
-  });
-});
+app.use(serverRoutes.routes());
+app.use(clinetRoutes.routes());
+app.use(serverRoutes.allowedMethods());
+
+console.log("Listening on port 8000...");
+await app.listen({ port: 8000 });
